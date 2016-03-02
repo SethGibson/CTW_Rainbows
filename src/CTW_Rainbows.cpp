@@ -2,12 +2,13 @@
 #include "cinder/app/RendererGl.h"
 #include "cinder/gl/gl.h"
 #include "cinder/Rand.h"
+#include "cinder/params/Params.h"
 
 using namespace ci;
 using namespace ci::app;
 using namespace std;
 
-static size_t S_NUM_PTCL = 25000;
+static size_t S_NUM_PTCL = 800000;
 
 struct ptcl
 {
@@ -29,6 +30,8 @@ public:
 	void draw() override;
 
 private:
+	void setupGUI();
+
 	vec2			mRangeInner, mRangeOuter;
 
 	int				mPong;
@@ -42,11 +45,21 @@ private:
 	gl::VaoRef					mAttribBuffers[2];
 	gl::VboRef					mDataBuffers[2];
 	gl::TransformFeedbackObjRef	mTFBuffers[2];
+
+	// Params
+	params::InterfaceGlRef	mGUI;
+
+	float	mParamGRotation,
+			mParamSinMod,
+			mParamCosMod,
+			mParamSpeedMod;
 };
 
 void CTW_Rainbows::setup()
 {
-	setWindowSize(978, 1100);
+	setupGUI();
+
+	setWindowSize(1280, 720);
 	mPong = 1;
 	mRangeInner = vec2(getWindowHeight()*0.3f, getWindowHeight()*0.5f);
 	mRangeOuter = vec2(getWindowHeight()*0.7f, getWindowHeight()*0.8f);
@@ -56,8 +69,6 @@ void CTW_Rainbows::setup()
 	gl::GlslProg::Format rdr;
 	rdr.vertex(loadAsset("render.vert"))
 		.fragment(loadAsset("render.frag"))
-		.attribLocation("o_Speed", 0)
-		.attribLocation("o_Polars", 1)
 		.attribLocation("o_Pos", 2)
 		.attribLocation("o_UV", 3);
 	mShaderRender = gl::GlslProg::create(rdr);
@@ -77,7 +88,6 @@ void CTW_Rainbows::setup()
 		.feedbackVaryings(tfVars)
 		.attribLocation("i_Speed", 0)
 		.attribLocation("i_Polars", 1)
-		.attribLocation("i_Pos", 2)
 		.attribLocation("i_UV", 3);
 
 	mShaderTF = gl::GlslProg::create(tf);
@@ -130,6 +140,10 @@ void CTW_Rainbows::update()
 		mPong = 1 - mPong;
 		{
 			gl::ScopedGlslProg tf(mShaderTF);
+			mShaderTF->uniform("u_Elapsed", (float)getElapsedFrames());
+			mShaderTF->uniform("u_SinMod", mParamSinMod);
+			mShaderTF->uniform("u_CosMod", mParamCosMod);
+			mShaderTF->uniform("u_SpeedMod", mParamSpeedMod);
 			gl::ScopedVao	attribs(mAttribBuffers[mPong]);
 			gl::ScopedState rDiscard(GL_RASTERIZER_DISCARD, GL_TRUE);
 
@@ -144,12 +158,16 @@ void CTW_Rainbows::update()
 
 void CTW_Rainbows::draw()
 {
-	gl::clear(Color::black());
-	gl::color(Color(0.75f, 0.75f, 0.75f));
+	gl::enableAdditiveBlending();
 	gl::setMatricesWindow(getWindowSize());
+	gl::clear(Color::black());
+	//gl::color(Color(0.75f, 0.75f, 0.75f));
+	gl::color(Color::white());
+
 	gl::draw(mTexBG, Rectf(vec2(), getWindowSize()));
 	gl::pushModelMatrix();
-	gl::translate(vec2(getWindowWidth(), getWindowHeight()*0.5f));
+	gl::translate(getWindowCenter());
+	gl::rotate((float)getElapsedFrames()*mParamGRotation);
 	{
 		gl::ScopedVao vao(mAttribBuffers[1-mPong]);
 		gl::ScopedGlslProg rdr(mShaderRender);
@@ -161,6 +179,23 @@ void CTW_Rainbows::draw()
 	}
 
 	gl::popModelMatrix();
+
+	mGUI->draw();
+}
+
+void CTW_Rainbows::setupGUI()
+{
+	mGUI = params::InterfaceGl::create("Params", { 200,300 });
+
+	mParamGRotation = 0.005f;
+	mParamSinMod = 0.005f;
+	mParamCosMod = 0.01f;
+	mParamSpeedMod = 500.0f;
+
+	mGUI->addParam("paramGRotation", &mParamGRotation, "label='Global Spin'", false);
+	mGUI->addParam("paramSinMod", &mParamSinMod, "label='Sin Mod'", false);
+	mGUI->addParam("paramCosMod", &mParamCosMod, "label='Cos Mod'", false);
+	mGUI->addParam("paramSpeedMod", &mParamSpeedMod, "label='Speed Mod'", false);
 }
 
 CINDER_APP(CTW_Rainbows, RendererGl )

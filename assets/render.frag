@@ -7,5 +7,5 @@ out vec4 FragColor;
 void main()
 {
 	FragColor = texture(u_SamplerRGB,UV);
-	FragColor.a = 0.75f;
+	FragColor.a = 0.08f;
 }
