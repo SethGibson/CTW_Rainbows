@@ -20,9 +20,9 @@ void main()
 
 	float speedX = i_Speed*u_SpeedMod;
 	if(i_Speed<0)
-		o_Polars.y+=sin(u_Elapsed*u_SinMod+speedX);
+		o_Polars.y+=sin(u_Elapsed/u_SinMod+speedX);
 	else
-		o_Polars.y+=cos(u_Elapsed*u_CosMod+speedX);
+		o_Polars.y+=cos(u_Elapsed/u_CosMod+speedX);
 
 	o_Pos.x = cos(o_Polars.x)*o_Polars.y;
 	o_Pos.y = sin(o_Polars.x)*o_Polars.y;

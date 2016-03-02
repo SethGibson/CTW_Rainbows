@@ -52,7 +52,9 @@ private:
 	float	mParamGRotation,
 			mParamSinMod,
 			mParamCosMod,
-			mParamSpeedMod;
+			mParamSpeedMod,
+			mParamPointSize,
+			mParamAlpha;
 };
 
 void CTW_Rainbows::setup()
@@ -161,8 +163,8 @@ void CTW_Rainbows::draw()
 	gl::enableAdditiveBlending();
 	gl::setMatricesWindow(getWindowSize());
 	gl::clear(Color::black());
-	//gl::color(Color(0.75f, 0.75f, 0.75f));
-	gl::color(Color::white());
+	gl::color(Color(0.75f, 0.75f, 0.75f));
+	//gl::color(Color::white());
 
 	gl::draw(mTexBG, Rectf(vec2(), getWindowSize()));
 	gl::pushModelMatrix();
@@ -171,6 +173,8 @@ void CTW_Rainbows::draw()
 	{
 		gl::ScopedVao vao(mAttribBuffers[1-mPong]);
 		gl::ScopedGlslProg rdr(mShaderRender);
+		mShaderRender->uniform("u_PointSize", mParamPointSize);
+		mShaderRender->uniform("u_Alpha", mParamAlpha);
 		gl::ScopedTextureBind tx(mTexRainbow, 0);
 		gl::ScopedState ps(GL_PROGRAM_POINT_SIZE, GL_TRUE);
 
@@ -188,14 +192,18 @@ void CTW_Rainbows::setupGUI()
 	mGUI = params::InterfaceGl::create("Params", { 200,300 });
 
 	mParamGRotation = 0.005f;
-	mParamSinMod = 0.005f;
-	mParamCosMod = 0.01f;
-	mParamSpeedMod = 500.0f;
+	mParamSinMod = 100.0f;
+	mParamCosMod = 300.0f;
+	mParamSpeedMod = 1000.0f;
+	mParamPointSize = 2.0f;
+	mParamAlpha = 0.05f;
 
 	mGUI->addParam("paramGRotation", &mParamGRotation, "label='Global Spin'", false);
 	mGUI->addParam("paramSinMod", &mParamSinMod, "label='Sin Mod'", false);
 	mGUI->addParam("paramCosMod", &mParamCosMod, "label='Cos Mod'", false);
 	mGUI->addParam("paramSpeedMod", &mParamSpeedMod, "label='Speed Mod'", false);
+	mGUI->addParam("paramPointSize", &mParamPointSize, "label='Point Size'", false);
+	mGUI->addParam("paramAlpha", &mParamAlpha, "label='Brightness'", false);
 }
 
 CINDER_APP(CTW_Rainbows, RendererGl )
