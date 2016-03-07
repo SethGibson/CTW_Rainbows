@@ -5,6 +5,6 @@ in vec4 ciPosition;
 
 void main()
 {
-	gl_PointSize =3.0f;
+	gl_PointSize =4.0f;
 	gl_Position = ciModelViewProjection * ciPosition;
 }

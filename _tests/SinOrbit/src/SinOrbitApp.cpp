@@ -13,8 +13,8 @@ struct ptcl {
 	ptcl(float pAmp, float pRad, float pWL, float pSpeed, float pSize) :
 		Amp(pAmp), Rad(pRad), WL(pWL), Speed(pSpeed), Size(pSize)
 	{
-		//mTimer = randInt(-360, 360);
-		mTimer = 0;
+		mTimer = randInt(-360, 360);
+		//mTimer = 0;
 	}
 
 	float Amp;
@@ -116,11 +116,12 @@ void SinOrbitApp::draw()
 
 void SinOrbitApp::reset(bool pShader)
 {
+	mColor = vec4(randVec3(), randFloat(0.005f, 0.025f));
 	mAlpha = randFloat(0.01f, 0.1f);
 	auto w = randFloat(5.0f,10.0f);
 	auto maxR = randFloat(350.0f, 400.0f);
-	//auto numPtcls = randInt(500, 1000);
-	auto numPtcls = 1000;
+	auto numPtcls = randInt(500, 1000);
+
 	mPtcls.clear();
 
 	for (int i = 0; i < numPtcls; ++i) {
@@ -146,8 +147,6 @@ void SinOrbitApp::reset(bool pShader)
 	else {
 		mPointData->bufferData(mPtcls.size()*sizeof(ptcl), mPtcls.data(), GL_DYNAMIC_DRAW);
 	}
-
-	mColor = vec4(randVec3(), randFloat(0.001f, 0.025f));
 }
 
 void prepareSettings(App::Settings *pSettings)
