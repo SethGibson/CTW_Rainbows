@@ -7,34 +7,58 @@ using namespace ci;
 using namespace ci::app;
 using namespace std;
 
-struct PLine
-{
+struct PLine {
+  public:
+	vector<vec2> LPoints;
+	Color LColor;
+	float LSpeed;
+	float LWL;
+	float LAmp;
+
+  private:
+	vector<vec2> mLineVerts;
+
+  public:
 	PLine()
 	{
-		LPoints.push_back({ 0,randInt(0, getWindowHeight()), 0 });
+		LPoints.push_back({ 0.0f,randFloat(0.0f, (float)getWindowHeight())});
+		LColor = Color({ randFloat(), randFloat(), randFloat() });
+		LSpeed = randFloat(1.0f, 2.0f);
+		LWL = randFloat(0.05f, 0.1f);
+		LAmp = randFloat(3.0f, 7.0f);
 	}
-
-	vector<vec3> LPoints;
-	ColorA LColor;
 
 	void Step()
 	{
-		auto x = LPoints[0].x+getElapsedFrames();
-		//auto y = math<float>::sin(x*0.01f)*10.0f;
+		auto last = LPoints.back();
+		auto x = last.x+LSpeed;
+		auto newAmp = lmap<float>(x, 0.0f, (float)getWindowWidth(), LAmp, 0.0f);
 
-		LPoints.push_back({x,LPoints[0].y,0});
+		auto y = LPoints[0].y+(math<float>::sin(x*LWL)*newAmp);
+
+		LPoints.push_back({x,y});
 	}
 
-	const vector<vec3> GetLines()
+	const vector<vec2>& GetLines()
 	{
-		vector<vec3> lines;
+		mLineVerts.clear();
 		if (LPoints.size() >= 2) {
 			for (int i = 0; i <= LPoints.size() - 2; ++i) {
-				lines.push_back(LPoints[i]);
-				lines.push_back(LPoints[i+1]);
+				mLineVerts.push_back(LPoints[i]);
+				mLineVerts.push_back(LPoints[i+1]);
 			}
 		}
-		return lines;
+		return mLineVerts;
+	}
+
+	const vector<vec4> GetColors()
+	{
+		vector<vec4> colors;
+		for (int c = 0; c < mLineVerts.size(); ++c) {
+			auto a = lmap<float>(c, 0.0f, mLineVerts.size(), 1.0f, 0.0f);
+			colors.push_back({LColor.r, LColor.g,LColor.b, a});
+		}
+		return colors;
 	}
 };
 
@@ -49,10 +73,8 @@ class LinesTest : public App {
 	  void buildBatch(bool pInit);
 
 	  vector<PLine> mLines;
-	  vector<vec3>	mAllLines;
 
-	  gl::BatchRef		mBatch;
-	  gl::VboRef		mData;
+	  gl::VboRef		mPointData, mColorData;
 	  gl::VboMeshRef	mMesh;
 	  gl::GlslProgRef	mShader;
 };
@@ -91,39 +113,46 @@ void LinesTest::draw()
 	gl::setMatricesWindow(getWindowSize());
 
 	gl::color(Color::white());
-	//mBatch->draw();
-	for (const auto &v : mAllLines) {
-		gl::drawSolidCircle({v.x,v.y}, 5, 8);
-	}
+
+	gl::ScopedGlslProg shdr(mShader);
+	gl::lineWidth(2.0f);
+	gl::draw(mMesh);
+
 }
 
 void LinesTest::buildBatch(bool pInit)
 {
-	mAllLines.clear();
+	vector<vec2> positions;
+	vector<vec4> colors;
 	for (auto &l : mLines) {
-		for (auto &p : l.LPoints) {
-			mAllLines.push_back(p);
-		}
-		//auto lp = l.GetLines();
-		//mAllLines.insert(mAllLines.end(), lp.begin(), lp.end());
+		auto lp = l.GetLines();
+		positions.insert(positions.end(), lp.begin(), lp.end());
+
+		auto lc = l.GetColors();
+		colors.insert(colors.end(), lc.begin(), lc.end());
 	}
+
+	
+	geom::BufferLayout linePoints;
+	linePoints.append(geom::POSITION, 2, 0, 0, 0);
+	
+	geom::BufferLayout lineColors;
+	lineColors.append(geom::COLOR, 4, 0, 0, 0);
 
 	if (pInit) {
-		mData = gl::Vbo::create(GL_ARRAY_BUFFER, mAllLines, GL_DYNAMIC_DRAW);
-		geom::BufferLayout lineAttrs;
-		lineAttrs.append(geom::POSITION, 3, 0, 0, 0);
-
-		mMesh = gl::VboMesh::create(mAllLines.size(), GL_POINTS, { { lineAttrs, mData } });
-		mBatch = gl::Batch::create(mMesh, mShader);
+		mPointData = gl::Vbo::create(GL_ARRAY_BUFFER, positions, GL_DYNAMIC_DRAW);
+		mColorData = gl::Vbo::create(GL_ARRAY_BUFFER, colors, GL_DYNAMIC_DRAW);
 	}
 	else {
-		mData->bufferData(mAllLines.size()*sizeof(vec3), mAllLines.data(), GL_DYNAMIC_DRAW);
+		mPointData->bufferData(positions.size()*sizeof(vec2), positions.data(), GL_DYNAMIC_DRAW);
+		mColorData->bufferData(colors.size()*sizeof(vec4), colors.data(), GL_DYNAMIC_DRAW);
 	}
+	mMesh = gl::VboMesh::create(positions.size(), GL_LINES, { {linePoints, mPointData},{lineColors,mColorData} });
 }
 
 void prepareSettings(App::Settings *pSettings)
 {
-	pSettings->setWindowSize({ 1000,500 });
+	pSettings->setWindowSize({ 1500, 500 });
 	pSettings->setFrameRate(60);
 }
 
