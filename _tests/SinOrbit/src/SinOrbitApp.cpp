@@ -151,7 +151,7 @@ void SinOrbitApp::reset(bool pShader)
 
 void prepareSettings(App::Settings *pSettings)
 {
-	pSettings->setWindowSize(1000, 1000);
+	pSettings->setWindowSize(800, 800);
 	pSettings->setFrameRate(60);
 }
 
