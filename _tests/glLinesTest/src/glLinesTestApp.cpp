@@ -9,20 +9,20 @@ using namespace std;
 
 struct PLine
 {
+	PLine()
+	{
+		LPoints.push_back({ 0,randInt(0, getWindowHeight()), 0 });
+	}
+
 	vector<vec3> LPoints;
 	ColorA LColor;
-	int Stepper;
-	PLine() : Stepper(0)
-	{
-		LPoints.push_back({Stepper,randInt(0, getWindowHeight()), 0});
-	}
 
 	void Step()
 	{
-		//auto x = LPoints[0].x+getElapsedFrames();
+		auto x = LPoints[0].x+getElapsedFrames();
 		//auto y = math<float>::sin(x*0.01f)*10.0f;
-		Stepper += 1;
-		LPoints.push_back({Stepper,LPoints[0].y,0});
+
+		LPoints.push_back({x,LPoints[0].y,0});
 	}
 
 	const vector<vec3> GetLines()
@@ -59,7 +59,7 @@ class LinesTest : public App {
 
 LinesTest::LinesTest()
 {
-	for (int i = 0; i < 1; ++i) {
+	for (int i = 0; i < 50; ++i) {
 		mLines.push_back(PLine());
 	}
 
@@ -91,7 +91,10 @@ void LinesTest::draw()
 	gl::setMatricesWindow(getWindowSize());
 
 	gl::color(Color::white());
-	mBatch->draw();
+	//mBatch->draw();
+	for (const auto &v : mAllLines) {
+		gl::drawSolidCircle({v.x,v.y}, 5, 8);
+	}
 }
 
 void LinesTest::buildBatch(bool pInit)
